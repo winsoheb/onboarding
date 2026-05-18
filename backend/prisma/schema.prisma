@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  role      String   // SUPER_ADMIN, TA, HR, IT_ADMIN, ASSET, DISPATCH, QA, SUPPORT
+  password  String?  // For local bypass
+  ms_oid    String?  // Microsoft Object ID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs      ActivityLog[]
+}
+
+model OnboardingTicket {
+  id               Int      @id @default(autoincrement())
+  ticketNumber     String   @unique
+  firstName        String
+  middleName       String?
+  lastName         String
+  fullName         String
+  contactNumber    String
+  personalEmail    String
+  doj              DateTime
+  designation      String
+  department       String
+  workType         String
+  officeLocation   String
+  projectName      String
+  reportingManager String
+  accountManager   String
+  ndaSigned        Boolean  @default(false)
+  pastExperience   String?
+  address          String
+  country          String
+  state            String
+  city             String
+  laptopRequired   Boolean  @default(true)
+  dispatchRequired Boolean  @default(true)
+  remarks          String?
+  
+  // Generated Fields
+  company          String   @default("Eastern Enterprise.com")
+  employeeId       String?  @unique
+  username         String?  @unique
+  companyEmailId   String?  @unique
+
+  status           String   @default("HR Verification") // HR Verification, BGV In Progress, IT Account Creation, Asset Preparation, Dispatch Pending, QA Verification, Ready for Joining, Joined, Closed
+
+  hrDetails        HRDetails?
+  itDetails        ITDetails?
+  assetDetails     AssetDetails?
+  dispatchDetails  DispatchDetails?
+  qaDetails        QADetails?
+  activityLogs     ActivityLog[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model HRDetails {
+  id                Int      @id @default(autoincrement())
+  ticketId          Int      @unique
+  ticket            OnboardingTicket @relation(fields: [ticketId], references: [id])
+  bgvStatus         String   @default("Pending")
+  documentsUploaded Boolean  @default(false)
+  inductionSchedule DateTime?
+  approved          Boolean  @default(false)
+}
+
+model ITDetails {
+  id                  Int      @id @default(autoincrement())
+  ticketId            Int      @unique
+  ticket              OnboardingTicket @relation(fields: [ticketId], references: [id])
+  adCreated           Boolean  @default(false)
+  o365LicenseAssigned Boolean  @default(false)
+  mfaEnabled          Boolean  @default(false)
+  snipeItUserCreated  Boolean  @default(false)
+  tempPassword        String?
+}
+
+model AssetDetails {
+  id               Int      @id @default(autoincrement())
+  ticketId         Int      @unique
+  ticket           OnboardingTicket @relation(fields: [ticketId], references: [id])
+  assetTag         String?
+  serialNumber     String?
+  hostname         String?
+  ram              String?
+  storage          String?
+  osVersion        String?
+  antivirusStatus  String?
+  assignedEngineer String?
+}
+
+model DispatchDetails {
+  id               Int      @id @default(autoincrement())
+  ticketId         Int      @unique
+  ticket           OnboardingTicket @relation(fields: [ticketId], references: [id])
+  courierScheduled Boolean  @default(false)
+  trackingId       String?
+  delivered        Boolean  @default(false)
+  podUploaded      Boolean  @default(false)
+}
+
+model QADetails {
+  id              Int      @id @default(autoincrement())
+  ticketId        Int      @unique
+  ticket          OnboardingTicket @relation(fields: [ticketId], references: [id])
+  adChecked       Boolean  @default(false)
+  o365Checked     Boolean  @default(false)
+  mfaChecked      Boolean  @default(false)
+  vpnChecked      Boolean  @default(false)
+  laptopChecked   Boolean  @default(false)
+  snipeItChecked  Boolean  @default(false)
+  softwareChecked Boolean  @default(false)
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    OnboardingTicket @relation(fields: [ticketId], references: [id])
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  timestamp DateTime @default(now())
+}
