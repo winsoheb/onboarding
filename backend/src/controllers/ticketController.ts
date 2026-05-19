@@ -269,3 +269,13 @@ export const updateHardwareConfig = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const searchInventoryUsers = async (req: Request, res: Response) => {
+  try {
+    const query = (req.query.q as string) || '';
+    const users = await SnipeITService.searchUsers(query);
+    res.status(200).json({ success: true, users });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

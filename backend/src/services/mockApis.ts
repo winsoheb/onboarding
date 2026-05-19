@@ -203,6 +203,48 @@ export const SnipeITService = {
       return { success: false, message: err.message };
     }
   },
+  searchUsers: async (query: string): Promise<any[]> => {
+    const snipeUrl = process.env.SNIPE_IT_URL;
+    const snipeToken = process.env.SNIPE_IT_TOKEN;
+
+    if (snipeUrl && snipeToken) {
+      try {
+        const cleanUrl = snipeUrl.trim().replace(/\/$/, '');
+        const url = `${cleanUrl}/api/v1/users?search=${encodeURIComponent(query)}`;
+        console.log(`[Snipe-IT API] Searching users with query: ${query}`);
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${snipeToken.trim()}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const data: any = await response.json();
+          if (data && data.rows && Array.isArray(data.rows)) {
+            return data.rows.map((u: any) => ({
+              id: u.id,
+              name: `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+              username: u.username,
+              email: u.email
+            }));
+          }
+        }
+      } catch (err: any) {
+        console.error(`[Snipe-IT API] User search failed: ${err.message}`);
+      }
+    }
+    // Fallback Mock Users for Local Dev
+    const mockUsers = [
+      { id: 1, name: 'Omkar Bapat', username: 'omkar.bapat', email: 'omkar.bapat@easternenterprise.com' },
+      { id: 2, name: 'Kalyani Chourasia', username: 'kalyani.chourasia', email: 'kalyani.chourasia@easternenterprise.com' },
+      { id: 3, name: 'Sonal Thorat', username: 'sonal.thorat', email: 'sonal.thorat@easternenterprise.com' },
+      { id: 4, name: 'John Doe', username: 'john.doe', email: 'john.doe@easternenterprise.com' },
+      { id: 5, name: 'Jane Smith', username: 'jane.smith', email: 'jane.smith@easternenterprise.com' }
+    ];
+    return mockUsers.filter(u => u.name.toLowerCase().includes(query.toLowerCase()));
+  },
   assignAsset: async (snipeItUserId: number, assetTag: string) => {
     await delay(1000);
     return {

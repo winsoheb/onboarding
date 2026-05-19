@@ -42,6 +42,45 @@ const SubmitForm = () => {
     }));
   };
 
+  const [reportingSuggestions, setReportingSuggestions] = useState<any[]>([]);
+  const [accountSuggestions, setAccountSuggestions] = useState<any[]>([]);
+  const [searchingReporting, setSearchingReporting] = useState(false);
+  const [searchingAccount, setSearchingAccount] = useState(false);
+
+  const handleSearchReporting = async (val: string) => {
+    setFormData(prev => ({ ...prev, reportingManager: val }));
+    if (val.trim().length < 2) {
+      setReportingSuggestions([]);
+      return;
+    }
+    setSearchingReporting(true);
+    try {
+      const res = await api.get(`/tickets/search-users?q=${encodeURIComponent(val)}`);
+      setReportingSuggestions(res.data.users || []);
+    } catch (err) {
+      console.error(val, err);
+    } finally {
+      setSearchingReporting(false);
+    }
+  };
+
+  const handleSearchAccount = async (val: string) => {
+    setFormData(prev => ({ ...prev, accountManager: val }));
+    if (val.trim().length < 2) {
+      setAccountSuggestions([]);
+      return;
+    }
+    setSearchingAccount(true);
+    try {
+      const res = await api.get(`/tickets/search-users?q=${encodeURIComponent(val)}`);
+      setAccountSuggestions(res.data.users || []);
+    } catch (err) {
+      console.error(val, err);
+    } finally {
+      setSearchingAccount(false);
+    }
+  };
+
   const [generatingEmail, setGeneratingEmail] = useState(false);
 
   const handleGenerateEmail = async () => {
@@ -156,7 +195,7 @@ const SubmitForm = () => {
                 type="button"
                 onClick={handleGenerateEmail}
                 disabled={generatingEmail || !formData.firstName || !formData.lastName}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-corporate-600 hover:bg-corporate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-corporate-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 dark:disabled:text-slate-500 transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
                 {generatingEmail ? 'Generating...' : 'Generate'}
               </button>
@@ -199,13 +238,73 @@ const SubmitForm = () => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Project Name</label>
             <input type="text" name="projectName" value={formData.projectName} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Reporting Manager</label>
-            <input required type="text" name="reportingManager" value={formData.reportingManager} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
+            <input 
+              required 
+              type="text" 
+              name="reportingManager" 
+              value={formData.reportingManager} 
+              onChange={(e) => handleSearchReporting(e.target.value)} 
+              onBlur={() => setTimeout(() => setReportingSuggestions([]), 200)}
+              autoComplete="off"
+              placeholder="Search manager..."
+              className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+            />
+            {searchingReporting && (
+              <span className="absolute right-3 top-9 text-xs text-slate-400">Searching...</span>
+            )}
+            {reportingSuggestions.length > 0 && (
+              <ul className="absolute right-0 left-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                {reportingSuggestions.map((usr: any) => (
+                  <li
+                    key={usr.id}
+                    onMouseDown={() => {
+                      setFormData(prev => ({ ...prev, reportingManager: usr.name }));
+                      setReportingSuggestions([]);
+                    }}
+                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200 flex justify-between items-center"
+                  >
+                    <span className="font-medium">{usr.name}</span>
+                    <span className="text-xs text-slate-400">{usr.email || usr.username}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Account Manager</label>
-            <input required type="text" name="accountManager" value={formData.accountManager} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
+            <input 
+              required 
+              type="text" 
+              name="accountManager" 
+              value={formData.accountManager} 
+              onChange={(e) => handleSearchAccount(e.target.value)} 
+              onBlur={() => setTimeout(() => setAccountSuggestions([]), 200)}
+              autoComplete="off"
+              placeholder="Search account manager..."
+              className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+            />
+            {searchingAccount && (
+              <span className="absolute right-3 top-9 text-xs text-slate-400">Searching...</span>
+            )}
+            {accountSuggestions.length > 0 && (
+              <ul className="absolute right-0 left-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                {accountSuggestions.map((usr: any) => (
+                  <li
+                    key={usr.id}
+                    onMouseDown={() => {
+                      setFormData(prev => ({ ...prev, accountManager: usr.name }));
+                      setAccountSuggestions([]);
+                    }}
+                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200 flex justify-between items-center"
+                  >
+                    <span className="font-medium">{usr.name}</span>
+                    <span className="text-xs text-slate-400">{usr.email || usr.username}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -256,7 +355,7 @@ const SubmitForm = () => {
           <button type="button" onClick={() => navigate('/')} className="bg-white dark:bg-slate-800 py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-corporate-500">
             Cancel
           </button>
-          <button type="submit" disabled={loading} className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-corporate-600 hover:bg-corporate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-corporate-500 disabled:bg-corporate-400">
+          <button type="submit" disabled={loading} className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-teal-400">
             {loading ? 'Submitting...' : 'Submit Request'}
           </button>
         </div>
