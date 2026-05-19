@@ -69,7 +69,7 @@ const Layout = () => {
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300">
         <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-700">
-          <h1 className="text-xl font-bold text-corporate-600 dark:text-corporate-500">SBQ Portal</h1>
+          <h1 className="text-xl font-bold text-corporate-600 dark:text-corporate-500">EE-SBQ Onboarding</h1>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">

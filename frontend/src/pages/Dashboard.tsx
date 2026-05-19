@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { Users, AlertCircle, Laptop, Settings, ArrowUpRight, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -20,10 +21,10 @@ const Dashboard = () => {
   }, []);
 
   const stats = [
-    { name: 'Total Requests', value: metrics?.totalRequests || 0, icon: Users, color: 'bg-blue-500' },
-    { name: 'HR Pending', value: metrics?.pendingHR || 0, icon: AlertCircle, color: 'bg-yellow-500' },
-    { name: 'IT Pending', value: metrics?.pendingIT || 0, icon: Settings, color: 'bg-purple-500' },
-    { name: 'Asset Pending', value: metrics?.pendingAsset || 0, icon: Laptop, color: 'bg-indigo-500' },
+    { name: 'Total Requests', value: metrics?.totalRequests || 0, icon: Users, color: 'bg-blue-500', path: '/ta/tickets' },
+    { name: 'HR Pending', value: metrics?.pendingHR || 0, icon: AlertCircle, color: 'bg-yellow-500', path: '/hr' },
+    { name: 'IT Pending', value: metrics?.pendingIT || 0, icon: Settings, color: 'bg-purple-500', path: '/it' },
+    { name: 'Asset Pending', value: metrics?.pendingAsset || 0, icon: Laptop, color: 'bg-indigo-500', path: '/asset' },
   ];
 
   return (
@@ -47,9 +48,9 @@ const Dashboard = () => {
               <p className="text-2xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
               <div className="absolute bottom-0 inset-x-0 bg-slate-50 dark:bg-slate-700/50 px-4 py-4 sm:px-6">
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-corporate-600 dark:text-corporate-400 hover:text-corporate-500 flex items-center">
+                  <Link to={item.path} className="font-medium text-corporate-600 dark:text-corporate-400 hover:text-corporate-500 flex items-center">
                     View all <ArrowUpRight className="ml-1 h-4 w-4" />
-                  </a>
+                  </Link>
                 </div>
               </div>
             </dd>
