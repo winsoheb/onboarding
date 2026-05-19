@@ -125,6 +125,35 @@ export const createTicket = async (req: Request, res: Response) => {
       }
     });
 
+    // Auto-create user in Snipe-IT in the background
+    const snipeResult = await SnipeITService.createUser({
+      ...data,
+      username,
+      companyEmailId,
+      company,
+      employeeId
+    });
+
+    if (snipeResult.success) {
+      await prisma.activityLog.create({
+        data: {
+          ticketId: newTicket.id,
+          userId: req.user?.id,
+          action: 'Snipe-IT User Created',
+          details: `Successfully auto-created user ${username} in Snipe-IT (ID: ${snipeResult.snipeItUserId})`
+        }
+      });
+    } else {
+      await prisma.activityLog.create({
+        data: {
+          ticketId: newTicket.id,
+          userId: req.user?.id,
+          action: 'Snipe-IT Auto-Creation Failed',
+          details: `Failed to auto-create user in Snipe-IT: ${snipeResult.message}`
+        }
+      });
+    }
+
     res.status(201).json({ success: true, ticket: newTicket });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
