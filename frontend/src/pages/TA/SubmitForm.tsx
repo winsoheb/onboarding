@@ -3,6 +3,31 @@ import api from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 
+const locationData: Record<string, Record<string, string[]>> = {
+  "India": {
+    "Maharashtra": ["Pune", "Mumbai", "Nagpur", "Thane", "Nashik"],
+    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"],
+    "Delhi": ["New Delhi", "Dwarka", "Rohini", "Saket"],
+    "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore"],
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Trichy"]
+  },
+  "Egypt": {
+    "Cairo Governorate": ["Cairo", "Helwan", "New Cairo"],
+    "Alexandria Governorate": ["Alexandria", "Borg El Arab"],
+    "Giza Governorate": ["Giza", "6th of October City", "Sheikh Zayed City"]
+  },
+  "Netherlands": {
+    "North Holland": ["Amsterdam", "Haarlem", "Zaanstad", "Alkmaar"],
+    "South Holland": ["Rotterdam", "The Hague", "Leiden", "Delft"],
+    "Utrecht": ["Utrecht", "Amersfoort", "Zeist", "Nieuwegein"]
+  },
+  "Germany": {
+    "Berlin": ["Berlin"],
+    "Bavaria": ["Munich", "Nuremberg", "Augsburg", "Regensburg"],
+    "North Rhine-Westphalia": ["Cologne", "Düsseldorf", "Dortmund", "Essen"]
+  }
+};
+
 const SubmitForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -27,12 +52,82 @@ const SubmitForm = () => {
     country: '',
     state: '',
     city: '',
+    zip: '',
     laptopRequired: true,
     dispatchRequired: true,
     remarks: ''
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
+  const [showStateSuggestions, setShowStateSuggestions] = useState(false);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+
+  const countryOptions = Object.keys(locationData).filter(c =>
+    c.toLowerCase().includes(formData.country.toLowerCase())
+  );
+
+  const stateOptions = (formData.country && locationData[formData.country]
+    ? Object.keys(locationData[formData.country])
+    : []
+  ).filter(s => s.toLowerCase().includes(formData.state.toLowerCase()));
+
+  const cityOptions = (formData.country && formData.state && locationData[formData.country] && locationData[formData.country][formData.state]
+    ? locationData[formData.country][formData.state]
+    : []
+  ).filter(ct => ct.toLowerCase().includes(formData.city.toLowerCase()));
+
+  const handleCountryChange = (val: string) => {
+    setFormData(prev => ({
+      ...prev,
+      country: val,
+      state: '',
+      city: ''
+    }));
+  };
+
+  const handleStateChange = (val: string) => {
+    setFormData(prev => ({
+      ...prev,
+      state: val,
+      city: ''
+    }));
+  };
+
+  const handleCityChange = (val: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city: val
+    }));
+  };
+
+  const selectCountry = (c: string) => {
+    setFormData(prev => ({
+      ...prev,
+      country: c,
+      state: '',
+      city: ''
+    }));
+    setShowCountrySuggestions(false);
+  };
+
+  const selectState = (s: string) => {
+    setFormData(prev => ({
+      ...prev,
+      state: s,
+      city: ''
+    }));
+    setShowStateSuggestions(false);
+  };
+
+  const selectCity = (ct: string) => {
+    setFormData(prev => ({
+      ...prev,
+      city: ct
+    }));
+    setShowCitySuggestions(false);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -311,25 +406,136 @@ const SubmitForm = () => {
         <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
           <h4 className="text-md font-medium text-slate-900 dark:text-white mb-4">Address & Additional Info</h4>
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+            
+            {/* Country */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Country</label>
+              <input 
+                required 
+                type="text" 
+                name="country" 
+                value={formData.country} 
+                onChange={(e) => handleCountryChange(e.target.value)} 
+                onFocus={() => setShowCountrySuggestions(true)}
+                onBlur={() => setTimeout(() => setShowCountrySuggestions(false), 200)}
+                autoComplete="off"
+                placeholder="Search or enter country..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
+              {showCountrySuggestions && countryOptions.length > 0 && (
+                <ul className="absolute right-0 left-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                  {countryOptions.map((c) => (
+                    <li
+                      key={c}
+                      onMouseDown={() => selectCountry(c)}
+                      className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* State */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">State</label>
+              <input 
+                required 
+                type="text" 
+                name="state" 
+                value={formData.state} 
+                onChange={(e) => handleStateChange(e.target.value)} 
+                onFocus={() => setShowStateSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowStateSuggestions(false), 200)}
+                autoComplete="off"
+                placeholder="Search or enter state..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
+              {showStateSuggestions && stateOptions.length > 0 && (
+                <ul className="absolute right-0 left-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                  {stateOptions.map((s) => (
+                    <li
+                      key={s}
+                      onMouseDown={() => selectState(s)}
+                      className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* City */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">City</label>
+              <input 
+                required 
+                type="text" 
+                name="city" 
+                value={formData.city} 
+                onChange={(e) => handleCityChange(e.target.value)} 
+                onFocus={() => setShowCitySuggestions(true)}
+                onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                autoComplete="off"
+                placeholder="Search or enter city..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
+              {showCitySuggestions && cityOptions.length > 0 && (
+                <ul className="absolute right-0 left-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                  {cityOptions.map((ct) => (
+                    <li
+                      key={ct}
+                      onMouseDown={() => selectCity(ct)}
+                      className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      {ct}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Zip */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Zip</label>
+              <input 
+                required 
+                type="text" 
+                name="zip" 
+                value={formData.zip} 
+                onChange={handleChange} 
+                placeholder="Enter postal/zip code..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
+            </div>
+
+            {/* Complete Address */}
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Complete Address</label>
-              <textarea required name="address" value={formData.address} onChange={handleChange} rows={2} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
+              <textarea 
+                required 
+                name="address" 
+                value={formData.address} 
+                onChange={handleChange} 
+                rows={2} 
+                placeholder="Enter full street address..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">City</label>
-              <input required type="text" name="city" value={formData.city} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">State</label>
-              <input required type="text" name="state" value={formData.state} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Country</label>
-              <input required type="text" name="country" value={formData.country} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
-            </div>
-            <div>
+
+            {/* Remarks */}
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Remarks</label>
-              <input type="text" name="remarks" value={formData.remarks} onChange={handleChange} className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" />
+              <input 
+                type="text" 
+                name="remarks" 
+                value={formData.remarks || ''} 
+                onChange={handleChange} 
+                placeholder="Any special remarks..."
+                className="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 shadow-sm focus:border-corporate-500 focus:ring-corporate-500 sm:text-sm dark:bg-slate-700 dark:text-white px-3 py-2 border" 
+              />
             </div>
           </div>
         </div>

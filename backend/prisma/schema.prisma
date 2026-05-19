@@ -42,6 +42,7 @@ model OnboardingTicket {
   country          String
   state            String
   city             String
+  zip              String   @default("")
   laptopRequired   Boolean  @default(true)
   dispatchRequired Boolean  @default(true)
   remarks          String?
