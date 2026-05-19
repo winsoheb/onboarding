@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import { Users, AlertCircle, Laptop, Settings, ArrowUpRight, TrendingUp } from 'lucide-react';

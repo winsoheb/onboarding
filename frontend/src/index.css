@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+  --color-corporate-50: #f0fdfa;
+  --color-corporate-100: #ccfbf1;
+  --color-corporate-400: #2dd4bf;
+  --color-corporate-500: #14b8a6;
+  --color-corporate-600: #0d9488;
+  --color-corporate-700: #0f766e;
+  --color-corporate-800: #115e59;
+  --color-corporate-900: #134e4a;
+  --color-corporate-dark: #0f172a;
+  --color-corporate-card: #1e293b;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {

@@ -53,6 +53,11 @@ model OnboardingTicket {
   username         String?  @unique
   companyEmailId   String?  @unique
 
+  // Keka HR sync fields
+  kekaEmployeeId   String?  @unique
+  kekaProfileUrl   String?
+  kekaHrNotes      String?
+
   status           String   @default("HR Verification") // HR Verification, BGV In Progress, IT Account Creation, Asset Preparation, Dispatch Pending, QA Verification, Ready for Joining, Joined, Closed
 
   hrDetails        HRDetails?
@@ -68,13 +73,33 @@ model OnboardingTicket {
 }
 
 model HRDetails {
-  id                Int      @id @default(autoincrement())
-  ticketId          Int      @unique
-  ticket            OnboardingTicket @relation(fields: [ticketId], references: [id])
-  bgvStatus         String   @default("Pending")
-  documentsUploaded Boolean  @default(false)
-  inductionSchedule DateTime?
-  approved          Boolean  @default(false)
+  id                  Int       @id @default(autoincrement())
+  ticketId            Int       @unique
+  ticket              OnboardingTicket @relation(fields: [ticketId], references: [id])
+
+  // BGV Verification
+  bgvStatus           String    @default("Pending") // Pending, In Progress, Cleared, Failed
+  approvalType        String?   // BGV_CLEARED | EXCEPTION_APPROVAL
+  approved            Boolean   @default(false)
+  hrRemarks           String?
+
+  // Exception Approval fields
+  bgvProof            String?   // Base64 file URL
+  bgvProofName        String?
+  bgvProofType        String?
+  bgvExceptionReason  String?
+  bgvUploadedBy       String?
+  bgvUploadedAt       DateTime?
+  bgvApprovedAt       DateTime?
+
+  // Induction Schedule (DOJ-locked)
+  inductionSchedule   DateTime?
+  meetingLink         String?
+  hrCoordinator       String?
+  inductionNotes      String?
+
+  // Legacy
+  documentsUploaded   Boolean   @default(false)
 }
 
 model ITDetails {
@@ -100,6 +125,7 @@ model AssetDetails {
   osVersion        String?
   antivirusStatus  String?
   assignedEngineer String?
+  deviceCondition  String?
 }
 
 model DispatchDetails {
@@ -113,16 +139,19 @@ model DispatchDetails {
 }
 
 model QADetails {
-  id              Int      @id @default(autoincrement())
-  ticketId        Int      @unique
-  ticket          OnboardingTicket @relation(fields: [ticketId], references: [id])
-  adChecked       Boolean  @default(false)
-  o365Checked     Boolean  @default(false)
-  mfaChecked      Boolean  @default(false)
-  vpnChecked      Boolean  @default(false)
-  laptopChecked   Boolean  @default(false)
-  snipeItChecked  Boolean  @default(false)
-  softwareChecked Boolean  @default(false)
+  id                    Int      @id @default(autoincrement())
+  ticketId              Int      @unique
+  ticket                OnboardingTicket @relation(fields: [ticketId], references: [id])
+  serialNumberVerified  Boolean  @default(false)
+  osConfigured          Boolean  @default(false)
+  softwareInstalled     Boolean  @default(false)
+  adChecked             Boolean  @default(false)
+  o365Checked           Boolean  @default(false)
+  mfaChecked            Boolean  @default(false)
+  vpnChecked            Boolean  @default(false)
+  laptopChecked         Boolean  @default(false)
+  snipeItChecked        Boolean  @default(false)
+  softwareChecked       Boolean  @default(false)
 }
 
 model ActivityLog {

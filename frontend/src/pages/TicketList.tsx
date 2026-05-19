@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
-import { useAuth } from '../context/AuthContext';
 import { Search, Filter } from 'lucide-react';
 
 const TicketList = ({ moduleName, expectedStatuses }: { moduleName: string, expectedStatuses: string[] }) => {

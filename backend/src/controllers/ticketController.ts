@@ -212,15 +212,55 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, remarks } = req.body;
+    const ticketId = Number(id);
+
+    const ticket = await prisma.onboardingTicket.findUnique({
+      where: { id: ticketId },
+      include: { hrDetails: true, assetDetails: true }
+    });
+
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+
+    const currentStatus = ticket.status;
+
+    // Strict Stage transition validations
+    // 1. HR cannot bypass to Joined
+    if (currentStatus === 'HR Verification' && status === 'Joined') {
+      return res.status(400).json({ error: 'Security block: Cannot transition from HR Verification directly to Joined. Candidate must complete IT Provisioning, Asset Preparation, and Dispatch Pending first.' });
+    }
+
+    // 2. Asset Preparation must transition to Dispatch Pending
+    if (currentStatus === 'Asset Preparation' && status !== 'Dispatch Pending' && status !== 'Asset Preparation') {
+      return res.status(400).json({ error: `Workflow transition block: Asset preparation cannot skip stages or transition directly to "${status}". Next stage must be Dispatch Pending.` });
+    }
+
+    // 3. Asset Preparation fields validation before transition
+    if (currentStatus === 'Asset Preparation' && status === 'Dispatch Pending') {
+      const asset = ticket.assetDetails;
+      if (!asset || !asset.hostname || !asset.serialNumber || !asset.assetTag || !asset.assignedEngineer) {
+        return res.status(400).json({ error: 'Validation Error: Hostname, Serial Number, Asset Tag, and Assigned Engineer are required fields before completing Asset Preparation.' });
+      }
+    }
+
+    // 4. Dispatch pending transition/approval validation
+    if (currentStatus === 'Dispatch Pending' && status !== 'Dispatch Pending') {
+      const hr = ticket.hrDetails;
+      const isBgvCleared = hr?.bgvStatus === 'Cleared';
+      const isExceptionApproved = hr?.approved && hr?.bgvProof && hr?.bgvExceptionReason;
+
+      if (!isBgvCleared && !isExceptionApproved) {
+        return res.status(400).json({ error: 'Dispatch Clearance Failed: Background Verification (BGV) must be Cleared, OR an Exceptional Case must be approved with uploaded proof and reason.' });
+      }
+    }
 
     const updatedTicket = await prisma.onboardingTicket.update({
-      where: { id: Number(id) },
+      where: { id: ticketId },
       data: {
         status,
         activityLogs: {
           create: {
             userId: req.user?.id,
-            action: `Status updated to ${status}`,
+            action: `Status updated from "${currentStatus}" to "${status}"`,
             details: remarks || '',
           }
         }

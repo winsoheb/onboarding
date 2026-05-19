@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
-import { Laptop, Apple, PenTool, CheckCircle, ChevronRight, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Laptop, Apple, PenTool, ChevronRight, AlertCircle } from 'lucide-react';
 
 const dellOptions = [
   "Dell - 8GB, 256GB SSD, i3",
