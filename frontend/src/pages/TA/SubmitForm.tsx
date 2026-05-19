@@ -2,31 +2,7 @@ import React, { useState } from 'react';
 import api from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
-
-const locationData: Record<string, Record<string, string[]>> = {
-  "India": {
-    "Maharashtra": ["Pune", "Mumbai", "Nagpur", "Thane", "Nashik"],
-    "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar"],
-    "Delhi": ["New Delhi", "Dwarka", "Rohini", "Saket"],
-    "Karnataka": ["Bangalore", "Mysore", "Hubli", "Mangalore"],
-    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Trichy"]
-  },
-  "Egypt": {
-    "Cairo Governorate": ["Cairo", "Helwan", "New Cairo"],
-    "Alexandria Governorate": ["Alexandria", "Borg El Arab"],
-    "Giza Governorate": ["Giza", "6th of October City", "Sheikh Zayed City"]
-  },
-  "Netherlands": {
-    "North Holland": ["Amsterdam", "Haarlem", "Zaanstad", "Alkmaar"],
-    "South Holland": ["Rotterdam", "The Hague", "Leiden", "Delft"],
-    "Utrecht": ["Utrecht", "Amersfoort", "Zeist", "Nieuwegein"]
-  },
-  "Germany": {
-    "Berlin": ["Berlin"],
-    "Bavaria": ["Munich", "Nuremberg", "Augsburg", "Regensburg"],
-    "North Rhine-Westphalia": ["Cologne", "Düsseldorf", "Dortmund", "Essen"]
-  }
-};
+import { locationData } from './locationData';
 
 const SubmitForm = () => {
   const navigate = useNavigate();
