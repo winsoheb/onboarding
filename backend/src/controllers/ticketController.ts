@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prismaClient';
-import { ITInventoryService } from '../services/mockApis';
+import { ITInventoryService, SnipeITService } from '../services/mockApis';
 
 const getDomainForCompany = (company: string): string => {
   if (company && (company.toLowerCase().includes('smartbooqing') || company.toLowerCase().includes('smartbooqng'))) {
@@ -115,6 +115,7 @@ export const createTicket = async (req: Request, res: Response) => {
         assetDetails: { create: {} },
         dispatchDetails: { create: {} },
         qaDetails: { create: {} },
+        hardwareRequest: { create: {} },
         activityLogs: {
           create: {
             userId: req.user?.id,
@@ -170,6 +171,9 @@ export const getTickets = async (req: Request, res: Response) => {
     const tickets = await prisma.onboardingTicket.findMany({
       where: filter,
       orderBy: { createdAt: 'desc' },
+      include: {
+        hardwareRequest: true
+      }
     });
 
     res.status(200).json({ success: true, tickets });
@@ -189,6 +193,7 @@ export const getTicketById = async (req: Request, res: Response) => {
         assetDetails: true,
         dispatchDetails: true,
         qaDetails: true,
+        hardwareRequest: true,
         activityLogs: {
           orderBy: { timestamp: 'desc' }
         }
@@ -223,6 +228,43 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
     });
 
     res.status(200).json({ success: true, ticket: updatedTicket });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateHardwareConfig = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { hardwareModel, hardwareComment } = req.body;
+
+    if (!hardwareModel) {
+      return res.status(400).json({ error: 'Hardware model is required.' });
+    }
+
+    if (hardwareModel.toLowerCase().includes('other') && !hardwareComment) {
+      return res.status(400).json({ error: 'Comment is required for custom hardware specification.' });
+    }
+
+    const updatedRequest = await prisma.hardwareRequest.update({
+      where: { ticketId: Number(id) },
+      data: {
+        hardwareModel,
+        hardwareComment,
+        hardwareStatus: 'SUBMITTED',
+      }
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        ticketId: Number(id),
+        userId: req.user?.id,
+        action: 'Hardware Selected',
+        details: `Hardware configuration selected by TA: ${hardwareModel}${hardwareComment ? ` (${hardwareComment})` : ''}`,
+      }
+    });
+
+    res.status(200).json({ success: true, hardwareRequest: updatedRequest });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

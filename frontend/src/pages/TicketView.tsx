@@ -161,6 +161,30 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
                 <dt className="text-sm font-medium text-slate-500">Generated Email ID</dt>
                 <dd className="mt-1 text-sm font-medium text-corporate-600">{ticket.companyEmailId}</dd>
               </div>
+              {ticket.hardwareRequest && (
+                <div className="sm:col-span-2 border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
+                  <dt className="text-sm font-semibold text-slate-700 dark:text-slate-300">Requested Hardware Specification</dt>
+                  <dd className="mt-1 text-sm text-slate-900 dark:text-slate-100">
+                    <span className="font-bold text-corporate-600 dark:text-corporate-400">
+                      {ticket.hardwareRequest.hardwareModel || 'Not Selected'}
+                    </span>
+                    {ticket.hardwareRequest.hardwareComment && (
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                        Comment: {ticket.hardwareRequest.hardwareComment}
+                      </p>
+                    )}
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                        ticket.hardwareRequest.hardwareStatus === 'SUBMITTED' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      }`}>
+                        Status: {ticket.hardwareRequest.hardwareStatus}
+                      </span>
+                    </div>
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
 

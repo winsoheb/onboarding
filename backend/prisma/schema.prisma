@@ -59,6 +59,7 @@ model OnboardingTicket {
   assetDetails     AssetDetails?
   dispatchDetails  DispatchDetails?
   qaDetails        QADetails?
+  hardwareRequest  HardwareRequest?
   activityLogs     ActivityLog[]
 
   createdAt        DateTime @default(now())
@@ -132,4 +133,15 @@ model ActivityLog {
   action    String
   details   String?
   timestamp DateTime @default(now())
+}
+
+model HardwareRequest {
+  id              Int              @id @default(autoincrement())
+  ticketId        Int              @unique
+  ticket          OnboardingTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  hardwareModel   String?
+  hardwareComment String?
+  hardwareStatus  String           @default("PENDING") // PENDING, SUBMITTED
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }

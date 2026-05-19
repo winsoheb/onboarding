@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTicket, getTickets, getTicketById, updateTicketStatus, generateEmail } from '../controllers/ticketController';
+import { createTicket, getTickets, getTicketById, updateTicketStatus, generateEmail, updateHardwareConfig } from '../controllers/ticketController';
 import { authenticate, requireRole } from '../middlewares/auth';
 
 const router = Router();
@@ -10,6 +10,7 @@ router.use(authenticate);
 // TA & Admin can create
 router.post('/generate-email', requireRole(['TA']), generateEmail);
 router.post('/', requireRole(['TA']), createTicket);
+router.patch('/:id/hardware', requireRole(['TA']), updateHardwareConfig);
 
 // Everyone can view tickets (can add more granular filtering inside controller)
 router.get('/', getTickets);

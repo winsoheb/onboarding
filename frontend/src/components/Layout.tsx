@@ -34,6 +34,25 @@ const Layout = () => {
     navigate('/login');
   };
 
+  React.useEffect(() => {
+    if (user && user.role === 'TA') {
+      const checkPendingHardware = async () => {
+        try {
+          const res = await api.get('/tickets');
+          const pending = res.data.tickets.find(
+            (t: any) => t.hardwareRequest?.hardwareStatus === 'PENDING'
+          );
+          if (pending) {
+            navigate(`/ta/hardware-config/${pending.id}`);
+          }
+        } catch (err) {
+          console.error('Failed to scan pending hardware requests', err);
+        }
+      };
+      checkPendingHardware();
+    }
+  }, [user, navigate, location.pathname]);
+
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'TA', 'HR', 'IT_ADMIN', 'ASSET', 'DISPATCH', 'QA', 'SUPPORT'] },
     { name: 'New Onboarding', path: '/ta/new', icon: UserPlus, roles: ['SUPER_ADMIN', 'TA'] },

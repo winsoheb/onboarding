@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import SubmitForm from './pages/TA/SubmitForm';
 import TicketView from './pages/TicketView';
 import TicketList from './pages/TicketList';
+import HardwareConfigForm from './pages/TA/HardwareConfigForm';
 
 // A simple wrapper to protect routes
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -23,6 +24,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/ta/hardware-config/:id" element={<ProtectedRoute><HardwareConfigForm /></ProtectedRoute>} />
           
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />

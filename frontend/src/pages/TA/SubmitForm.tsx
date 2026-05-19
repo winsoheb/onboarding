@@ -74,12 +74,12 @@ const SubmitForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/tickets', {
+      const res = await api.post('/tickets', {
         ...formData,
         fullName: `${formData.firstName} ${formData.lastName}`
       });
       setSuccess(true);
-      setTimeout(() => navigate('/'), 2000);
+      setTimeout(() => navigate(`/ta/hardware-config/${res.data.ticket.id}`), 2000);
     } catch (err) {
       console.error(err);
       alert('Failed to submit onboarding request.');
