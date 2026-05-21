@@ -863,3 +863,12 @@ export const updateKekaDetails = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getDeployableAssetsRoute = async (req: Request, res: Response) => {
+  try {
+    const assets = await SnipeITService.getDeployableAssets();
+    res.status(200).json({ success: true, assets });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

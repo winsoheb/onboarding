@@ -32,11 +32,12 @@ function App() {
             <Route path="ta/new" element={<SubmitForm />} />
             <Route path="ta/tickets" element={<TicketList moduleName="Submitted Tickets" expectedStatuses={[]} />} />
             <Route path="tickets/:id" element={<TicketView />} />
-            <Route path="hr" element={<TicketList moduleName="HR" expectedStatuses={['HR Verification', 'Dispatch', 'Joined']} />} />
+            <Route path="hr" element={<TicketList moduleName="HR" expectedStatuses={['HR Verification', 'Dispatch']} />} />
             <Route path="it" element={<TicketList moduleName="IT" expectedStatuses={['IT & Asset Preparation']} />} />
             <Route path="asset" element={<TicketList moduleName="Asset" expectedStatuses={['IT & Asset Preparation']} />} />
             <Route path="dispatch" element={<TicketList moduleName="Dispatch" expectedStatuses={['Dispatch']} />} />
             <Route path="qa" element={<TicketList moduleName="QA" expectedStatuses={['Dispatch']} />} />
+            <Route path="archive" element={<TicketList moduleName="Archive" expectedStatuses={['Joined', 'Closed']} />} />
           </Route>
         </Routes>
       </Router>

@@ -274,9 +274,9 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
       const hr = ticket.hrDetails;
       const handoverType = ticket.assetDetails?.handoverType;
 
-      const isQaComplete = qa && qa.serialNumberVerified && qa.osConfigured && qa.softwareInstalled;
+      const isQaComplete = qa && qa.serialNumberVerified && qa.osConfigured && qa.softwareInstalled && qa.completed;
       if (!isQaComplete) {
-        return res.status(400).json({ error: 'Transition Blocked: QA Verification checklist must be fully completed.' });
+        return res.status(400).json({ error: 'Transition Blocked: QA Verification checklist must be fully completed and submitted.' });
       }
 
       // Courier vs Office handover logic
@@ -298,7 +298,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
       }
 
       // Induction Schedule & Employee ID fields must be completed
-      const isInductionSet = hr && hr.inductionSchedule && hr.meetingLink && hr.hrCoordinator;
+      const isInductionSet = hr && hr.inductionSchedule && hr.hrCoordinator && hr.hrCoordinator.trim() !== '';
       const isEmployeeIdSet = ticket.kekaEmployeeId && ticket.kekaEmployeeId.trim() !== '';
 
       if (!isInductionSet || !isEmployeeIdSet) {

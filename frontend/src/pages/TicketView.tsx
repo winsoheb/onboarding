@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, CheckCircle2, Circle, Copy, Check, FileText, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Copy, Check, FileText, Download, Users } from 'lucide-react';
 
 const TicketView = () => {
   const { id } = useParams();
@@ -58,11 +58,10 @@ const TicketView = () => {
   const [credFileError, setCredFileError] = useState<string | null>(null);
   const [isReplacingCreds, setIsReplacingCreds] = useState(false);
 
-  // Asset Validation State
-  const [assetSearchTerm, setAssetSearchTerm] = useState('');
-  const [assetSearchType, setAssetSearchType] = useState<'serial' | 'asset_tag'>('serial');
-  const [assetValidating, setAssetValidating] = useState(false);
-  const [assetValidationResult, setAssetValidationResult] = useState<{ deployable: boolean; statusName: string; assetName?: string; error?: string } | null>(null);
+  // Deployable Assets State
+  const [deployableAssets, setDeployableAssets] = useState<any[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [selectedAssetId, setSelectedAssetId] = useState<string>('');
 
   // GetPass Upload State
   const [handoverType, setHandoverType] = useState<'OFFICE' | 'COURIER' | ''>('');
@@ -90,6 +89,19 @@ const TicketView = () => {
     }
   };
 
+  const fetchDeployableAssets = async () => {
+    try {
+      setAssetsLoading(true);
+      const res = await api.get('/modules/inventory/deployable');
+      if (res.data && res.data.assets) {
+        setDeployableAssets(res.data.assets);
+      }
+    } catch (err) {
+      console.error('Failed to fetch deployable assets:', err);
+    } finally {
+      setAssetsLoading(false);
+    }
+  };
   const fetchTicket = async () => {
     try {
       const res = await api.get(`/tickets/${id}`);
@@ -105,6 +117,9 @@ const TicketView = () => {
     fetchTicket();
     if (user?.role === 'SUPER_ADMIN' || user?.role === 'IT_ADMIN') {
       fetchLicenses();
+    }
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ASSET') {
+      fetchDeployableAssets();
     }
   }, [id, user]);
 
@@ -610,7 +625,55 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
           </div>
         </div>
       </div>
-
+      {/* GLOBAL EMPLOYEE DETAILS HEADER */}
+      <div className="bg-gradient-to-r from-corporate-50 to-white dark:from-slate-800/80 dark:to-slate-900/80 border border-corporate-100 dark:border-slate-700 shadow-sm rounded-lg overflow-hidden mb-6">
+        <div className="px-6 py-4 border-b border-corporate-100 dark:border-slate-700 flex items-center justify-between">
+          <h4 className="text-sm font-bold uppercase tracking-wider text-corporate-800 dark:text-corporate-300 flex items-center gap-2">
+            <Users className="w-4 h-4" /> Global Employee Details
+          </h4>
+          <span className="text-xs bg-corporate-100 text-corporate-800 dark:bg-corporate-900/50 dark:text-corporate-300 px-3 py-1 rounded-full font-semibold">
+            Emp ID: {ticket.employeeId || ticket.kekaEmployeeId || 'Pending'}
+          </span>
+        </div>
+        <div className="p-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-4">
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Full Name</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{ticket.fullName}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Date of Joining</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{new Date(ticket.doj).toLocaleDateString()}</dd>
+          </div>
+          <div className="col-span-2 md:col-span-1 lg:col-span-2">
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Official Email</dt>
+            <dd className="mt-1 text-sm font-semibold text-corporate-600 dark:text-corporate-400 truncate" title={ticket.companyEmailId}>{ticket.companyEmailId || 'Pending Generation'}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Contact Number</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{ticket.contactNumber}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Department</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 truncate" title={ticket.department}>{ticket.department}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Designation</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 truncate" title={ticket.designation}>{ticket.designation}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Reporting Manager</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{ticket.reportingManager}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Hardware Type</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{ticket.hardwareRequest?.hardwareModel || 'Not Selected'}</dd>
+          </div>
+          <div>
+            <dt className="text-[10px] font-bold uppercase text-slate-500">Work Location</dt>
+            <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{ticket.officeLocation}</dd>
+          </div>
+        </div>
+      </div>
       <div className="bg-white dark:bg-slate-800 shadow rounded-lg overflow-hidden">
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Details Section */}
@@ -1336,47 +1399,38 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
                 <div className="space-y-4">
                   <h6 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Inventory Parameters</h6>
 
-                  {/* Asset Validation Widget */}
+                  {/* Select Asset from Inventory */}
                   <div className="p-3 bg-slate-100 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">🔍 Validate Asset from Inventory</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">🔍 Select Asset from Inventory</span>
                     <div className="flex gap-2">
                       <select
-                        value={assetSearchType}
-                        onChange={(e) => { setAssetSearchType(e.target.value as 'serial' | 'asset_tag'); setAssetValidationResult(null); }}
-                        className="text-xs rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white px-2 py-1.5 shrink-0"
+                        value={selectedAssetId}
+                        onChange={(e) => {
+                          const assetId = e.target.value;
+                          setSelectedAssetId(assetId);
+                          const asset = deployableAssets.find(a => a.id.toString() === assetId);
+                          if (asset) {
+                            setSerialNumber(asset.serial);
+                            setAssetTag(asset.assetTag);
+                            if (asset.name) setHostname(asset.name);
+                          }
+                        }}
+                        disabled={assetsLoading}
+                        className="flex-1 text-sm rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white px-3 py-2"
                       >
-                        <option value="serial">Serial Number</option>
-                        <option value="asset_tag">Asset Tag</option>
+                        <option value="">{assetsLoading ? 'Loading inventory...' : '-- Select Deployable Hardware --'}</option>
+                        {deployableAssets.map((asset) => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.model} - {asset.assetTag} (SN: {asset.serial})
+                          </option>
+                        ))}
                       </select>
-                      <input
-                        type="text"
-                        value={assetSearchTerm}
-                        onChange={(e) => { setAssetSearchTerm(e.target.value); setAssetValidationResult(null); }}
-                        onKeyDown={(e) => e.key === 'Enter' && handleValidateAsset()}
-                        placeholder={assetSearchType === 'serial' ? 'Enter serial number...' : 'Enter asset tag...'}
-                        className="flex-1 text-xs rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white px-2 py-1.5"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleValidateAsset}
-                        disabled={!assetSearchTerm.trim() || assetValidating}
-                        className="text-xs px-3 py-1.5 bg-corporate-600 text-white rounded hover:bg-corporate-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors shrink-0"
-                      >
-                        {assetValidating ? '...' : 'Validate'}
-                      </button>
                     </div>
-                    {assetValidationResult && (
-                      assetValidationResult.deployable ? (
-                        <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded px-2.5 py-1.5">
-                          <span className="text-green-500">✔</span>
-                          <span><strong>Deployable</strong> — Asset verified. Status: {assetValidationResult.statusName}{assetValidationResult.assetName ? ` · ${assetValidationResult.assetName}` : ''}. Field auto-filled below.</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 text-xs text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded px-2.5 py-1.5">
-                          <span>✖</span>
-                          <span>{assetValidationResult.error || 'Selected asset is not deployable.'}</span>
-                        </div>
-                      )
+                    {selectedAssetId && (
+                      <div className="flex items-center gap-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded px-2.5 py-1.5 mt-2">
+                        <span className="text-green-500">✔</span>
+                        <span><strong>Asset Selected</strong> — Serial Number and Asset Tag auto-filled below.</span>
+                      </div>
                     )}
                   </div>
 
@@ -1398,32 +1452,34 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Serial Number *
-                        {assetValidationResult?.deployable && assetSearchType === 'serial' && (
-                          <span className="ml-2 text-[10px] text-green-600 font-bold">✔ Validated</span>
+                        {selectedAssetId && (
+                          <span className="ml-2 text-[10px] text-green-600 font-bold">✔ Auto-filled</span>
                         )}
                       </label>
                       <input
                         type="text"
                         value={serialNumber}
                         onChange={(e) => setSerialNumber(e.target.value)}
+                        readOnly={!!selectedAssetId}
                         placeholder="Enter unique manufacturer serial"
-                        className={`w-full text-sm rounded border dark:bg-slate-800 ${assetValidationResult?.deployable && assetSearchType === 'serial' ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-950/20' : 'border-slate-300 dark:border-slate-600'}`}
+                        className={`w-full text-sm rounded border dark:bg-slate-800 ${selectedAssetId ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-950/20' : 'border-slate-300 dark:border-slate-600'}`}
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Asset Tag *
-                        {assetValidationResult?.deployable && assetSearchType === 'asset_tag' && (
-                          <span className="ml-2 text-[10px] text-green-600 font-bold">✔ Validated</span>
+                        {selectedAssetId && (
+                          <span className="ml-2 text-[10px] text-green-600 font-bold">✔ Auto-filled</span>
                         )}
                       </label>
                       <input
                         type="text"
                         value={assetTag}
                         onChange={(e) => setAssetTag(e.target.value)}
+                        readOnly={!!selectedAssetId}
                         placeholder="e.g. EE-AST-2026-104"
-                        className={`w-full text-sm rounded border dark:bg-slate-800 ${assetValidationResult?.deployable && assetSearchType === 'asset_tag' ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-950/20' : 'border-slate-300 dark:border-slate-600'}`}
+                        className={`w-full text-sm rounded border dark:bg-slate-800 ${selectedAssetId ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-950/20' : 'border-slate-300 dark:border-slate-600'}`}
                       />
                     </div>
 
@@ -1660,7 +1716,14 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
             {(user?.role === 'SUPER_ADMIN' || user?.role === 'DISPATCH') && ticket.status === 'Dispatch' && (
               <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg mb-4 border border-slate-200 dark:border-slate-600">
                 <h5 className="font-semibold text-slate-900 dark:text-white mb-3">Courier &amp; Dispatch Management</h5>
-
+                
+                {/* Candidate Delivery Address for Dispatch */}
+                <div className="mb-4 p-3 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-600">
+                  <h6 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Candidate Delivery Address</h6>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{ticket.address}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">{ticket.city}, {ticket.state} {ticket.zip}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">{ticket.country}</p>
+                </div>
                 {/* BGV Warning Banner for Dispatch */}
                 {showWarningBanner && (
                   <div className="mb-4 bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-3 rounded">
@@ -1904,11 +1967,12 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
                     <input 
                       type="checkbox" 
                       checked={ticket.qaDetails?.serialNumberVerified} 
+                      disabled={ticket.qaDetails?.completed}
                       onChange={async (e) => {
                         await api.put(`/modules/${id}/qa`, { serialNumberVerified: e.target.checked });
                         fetchTicket();
                       }}
-                      className="rounded text-corporate-600 focus:ring-corporate-500" 
+                      className="rounded text-corporate-600 focus:ring-corporate-500 disabled:opacity-50" 
                     />
                     <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">Serial Number & Specs Match Inventory</span>
                   </label>
@@ -1916,27 +1980,50 @@ ${ticket.laptopRequired ? 'We need to dispatch the laptop.' : 'No laptop dispatc
                     <input 
                       type="checkbox" 
                       checked={ticket.qaDetails?.osConfigured} 
+                      disabled={ticket.qaDetails?.completed}
                       onChange={async (e) => {
                         await api.put(`/modules/${id}/qa`, { osConfigured: e.target.checked });
                         fetchTicket();
                       }}
-                      className="rounded text-corporate-600 focus:ring-corporate-500" 
+                      className="rounded text-corporate-600 focus:ring-corporate-500 disabled:opacity-50" 
                     />
                     <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">OS Configuration Verified</span>
                   </label>
                   <label className="flex items-center">
                     <input 
                       type="checkbox" 
-                      checked={ticket.qaDetails?.softwareInstalled} 
+                      checked={ticket.qaDetails?.softwareInstalled}
+                      disabled={ticket.qaDetails?.completed} 
                       onChange={async (e) => {
                         await api.put(`/modules/${id}/qa`, { softwareInstalled: e.target.checked });
                         fetchTicket();
                       }}
-                      className="rounded text-corporate-600 focus:ring-corporate-500" 
+                      className="rounded text-corporate-600 focus:ring-corporate-500 disabled:opacity-50" 
                     />
                     <span className="ml-2 text-sm text-slate-700 dark:text-slate-300">Standard Software Bundle Verified</span>
                   </label>
                 </div>
+
+                {ticket.qaDetails?.completed ? (
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-300 dark:border-green-700 rounded-lg text-center">
+                    <p className="text-sm font-bold text-green-700 dark:text-green-400 flex justify-center items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5" /> QA Verification Submitted & Completed
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    disabled={!(ticket.qaDetails?.serialNumberVerified && ticket.qaDetails?.osConfigured && ticket.qaDetails?.softwareInstalled)}
+                    onClick={async () => {
+                      if(window.confirm('Are you sure you want to submit QA Verification? This cannot be undone.')){
+                        await api.put(`/modules/${id}/qa`, { completed: true });
+                        fetchTicket();
+                      }
+                    }}
+                    className="w-full mt-4 bg-corporate-600 hover:bg-corporate-700 text-white text-sm py-2 rounded shadow transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Submit QA Verification
+                  </button>
+                )}
               </div>
             )}
 

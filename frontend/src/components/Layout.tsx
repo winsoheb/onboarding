@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, UserPlus, Server, Monitor, Truck, CheckSquare, LogOut, Settings, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, UserPlus, Server, Monitor, Truck, CheckSquare, LogOut, Settings, Sun, Moon, Archive } from 'lucide-react';
 import clsx from 'clsx';
 import api from '../utils/api';
 
@@ -63,6 +63,7 @@ const Layout = () => {
     { name: 'Asset Management', path: '/asset', icon: Monitor, roles: ['SUPER_ADMIN', 'ASSET'] },
     { name: 'Dispatch', path: '/dispatch', icon: Truck, roles: ['SUPER_ADMIN', 'DISPATCH'] },
     { name: 'QA Check', path: '/qa', icon: CheckSquare, roles: ['SUPER_ADMIN', 'QA'] },
+    { name: 'Archive', path: '/archive', icon: Archive, roles: ['SUPER_ADMIN', 'TA', 'HR', 'IT_ADMIN', 'ASSET', 'DISPATCH', 'QA', 'SUPPORT'] },
   ];
 
   return (

@@ -305,6 +305,53 @@ export const SnipeITService = {
     await delay(300);
     return { deployable: true, assetId: null, statusName: 'Deployable', statusId: 4 };
   },
+  getDeployableAssets: async (): Promise<any[]> => {
+    const snipeUrl = process.env.SNIPE_IT_URL || process.env.SNIPEIT_URL;
+    const snipeToken = process.env.SNIPE_IT_TOKEN || process.env.SNIPEIT_TOKEN;
+
+    if (snipeUrl && snipeToken) {
+      try {
+        const cleanUrl = snipeUrl.trim().replace(/\/$/, '');
+        // status_id 4 is Deployable
+        const url = `${cleanUrl}/api/v1/hardware?status_id=4&limit=50`;
+        console.log(`[Snipe-IT API] Fetching deployable assets...`);
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${snipeToken.trim()}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data: any = await response.json();
+          const rows = data?.rows || [];
+          return rows.map((asset: any) => ({
+            id: asset.id,
+            assetTag: asset.asset_tag,
+            serial: asset.serial,
+            model: asset.model?.name || 'Unknown Model',
+            name: asset.name || '',
+            statusName: asset.status_label?.name || 'Deployable'
+          }));
+        } else {
+          console.warn(`[Snipe-IT API] HTTP ${response.status} while fetching deployable assets.`);
+        }
+      } catch (err: any) {
+        console.error(`[Snipe-IT API] getDeployableAssets failed: ${err.message}`);
+      }
+    }
+
+    // Dev mock fallback
+    await delay(300);
+    return [
+      { id: 101, assetTag: 'EE-AST-2026-101', serial: 'S-7A8B9C0D', model: 'MacBook Pro 16" M3', name: 'MBP-DEV-01', statusName: 'Deployable' },
+      { id: 102, assetTag: 'EE-AST-2026-102', serial: 'S-1A2B3C4D', model: 'Dell Latitude 7420', name: 'DELL-QA-02', statusName: 'Deployable' },
+      { id: 103, assetTag: 'EE-AST-2026-103', serial: 'S-9X8Y7Z6W', model: 'Lenovo ThinkPad T14', name: 'LEN-HR-03', statusName: 'Deployable' },
+      { id: 104, assetTag: 'EE-AST-2026-104', serial: 'S-5Q4R3S2T', model: 'MacBook Air M2', name: 'MBA-TA-04', statusName: 'Deployable' }
+    ];
+  },
   updateUserEmployeeNum: async (email: string, employeeNum: string): Promise<{ success: boolean; message: string }> => {
     const snipeUrl = process.env.SNIPE_IT_URL || process.env.SNIPEIT_URL;
     const snipeToken = process.env.SNIPE_IT_TOKEN || process.env.SNIPEIT_TOKEN;

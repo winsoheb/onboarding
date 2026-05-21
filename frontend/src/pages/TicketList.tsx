@@ -40,8 +40,9 @@ const TicketList = ({ moduleName, expectedStatuses }: { moduleName: string; expe
   }, [expectedStatuses]);
 
   const queueTickets = allTickets.filter(t => !DONE_STATUSES.includes(t.status));
-  const archiveTickets = allTickets.filter(t => DONE_STATUSES.includes(t.status));
-  const displayed = (tab === 'queue' ? queueTickets : archiveTickets).filter(t =>
+  const archiveTickets = allTickets.filter(t => DONE_STATUSES.includes(t.status) || t.status === 'Closed');
+
+  const displayed = (moduleName === 'Archive' ? allTickets : (tab === 'queue' ? queueTickets : archiveTickets)).filter(t =>
     !search || t.fullName?.toLowerCase().includes(search.toLowerCase()) ||
     t.ticketNumber?.toLowerCase().includes(search.toLowerCase()) ||
     t.department?.toLowerCase().includes(search.toLowerCase())
@@ -63,40 +64,42 @@ const TicketList = ({ moduleName, expectedStatuses }: { moduleName: string; expe
 
           <div className="flex items-center gap-3">
             {/* Queue / Archive Tabs */}
-            <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden text-sm font-medium">
-              <button
-                onClick={() => setTab('queue')}
-                className={`flex items-center gap-1.5 px-4 py-2 transition-colors ${
-                  tab === 'queue'
-                    ? 'bg-corporate-600 text-white'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Inbox className="w-3.5 h-3.5" />
-                Queue
-                {queueTickets.length > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === 'queue' ? 'bg-white/20 text-white' : 'bg-corporate-100 text-corporate-700'}`}>
-                    {queueTickets.length}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setTab('archive')}
-                className={`flex items-center gap-1.5 px-4 py-2 border-l border-slate-200 dark:border-slate-700 transition-colors ${
-                  tab === 'archive'
-                    ? 'bg-slate-700 text-white dark:bg-slate-600'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                <Archive className="w-3.5 h-3.5" />
-                Archive
-                {archiveTickets.length > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === 'archive' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                    {archiveTickets.length}
-                  </span>
-                )}
-              </button>
-            </div>
+            {moduleName !== 'Archive' && (
+              <div className="flex rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden text-sm font-medium">
+                <button
+                  onClick={() => setTab('queue')}
+                  className={`flex items-center gap-1.5 px-4 py-2 transition-colors ${
+                    tab === 'queue'
+                      ? 'bg-corporate-600 text-white'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <Inbox className="w-3.5 h-3.5" />
+                  Queue
+                  {queueTickets.length > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === 'queue' ? 'bg-white/20 text-white' : 'bg-corporate-100 text-corporate-700'}`}>
+                      {queueTickets.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setTab('archive')}
+                  className={`flex items-center gap-1.5 px-4 py-2 border-l border-slate-200 dark:border-slate-700 transition-colors ${
+                    tab === 'archive'
+                      ? 'bg-slate-700 text-white dark:bg-slate-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  Archive
+                  {archiveTickets.length > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tab === 'archive' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                      {archiveTickets.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Search */}
             <div className="relative rounded-md shadow-sm">
