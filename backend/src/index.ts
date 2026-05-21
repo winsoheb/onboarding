@@ -46,7 +46,41 @@ async function seedDefaultUser() {
   }
 }
 
+async function seedLicenses() {
+  try {
+    const licenseCount = await prisma.licenseInventory.count();
+    if (licenseCount === 0) {
+      console.log('Seeding available licenses into Inventory...');
+      const licenseMappings = [
+        { type: 'SBQ-Basic', id: 37 },
+        { type: 'SBQ-Standard', id: 88 },
+        { type: 'EE-Standard', id: 55 },
+        { type: 'EE-Basic', id: 56 }
+      ];
+
+      for (const mapping of licenseMappings) {
+        // Seed 10 licenses of each type
+        for (let i = 1; i <= 10; i++) {
+          const key = `${mapping.type}-${String(i).padStart(3, '0')}`;
+          await prisma.licenseInventory.create({
+            data: {
+              licenseKey: key,
+              licenseType: mapping.type,
+              snipeItLicenseId: mapping.id,
+              status: 'Available'
+            }
+          });
+        }
+      }
+      console.log('Seeded 40 licenses successfully into inventory!');
+    }
+  } catch (err) {
+    console.error('Failed to seed licenses inventory:', err);
+  }
+}
+
 app.listen(PORT, async () => {
   await seedDefaultUser();
+  await seedLicenses();
   console.log(`Server running on port ${PORT}`);
 });

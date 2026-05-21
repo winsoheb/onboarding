@@ -194,6 +194,7 @@ export const getTicketById = async (req: Request, res: Response) => {
         dispatchDetails: true,
         qaDetails: true,
         hardwareRequest: true,
+        credentialSheet: true,
         activityLogs: {
           orderBy: { timestamp: 'desc' }
         }
@@ -216,41 +217,98 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
 
     const ticket = await prisma.onboardingTicket.findUnique({
       where: { id: ticketId },
-      include: { hrDetails: true, assetDetails: true }
+      include: {
+        hrDetails: true,
+        itDetails: true,
+        assetDetails: true,
+        dispatchDetails: true,
+        qaDetails: true,
+        credentialSheet: true
+      }
     });
 
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
     const currentStatus = ticket.status;
 
-    // Strict Stage transition validations
-    // 1. HR cannot bypass to Joined
-    if (currentStatus === 'HR Verification' && status === 'Joined') {
-      return res.status(400).json({ error: 'Security block: Cannot transition from HR Verification directly to Joined. Candidate must complete IT Provisioning, Asset Preparation, and Dispatch Pending first.' });
-    }
-
-    // 2. Asset Preparation must transition to Dispatch Pending
-    if (currentStatus === 'Asset Preparation' && status !== 'Dispatch Pending' && status !== 'Asset Preparation') {
-      return res.status(400).json({ error: `Workflow transition block: Asset preparation cannot skip stages or transition directly to "${status}". Next stage must be Dispatch Pending.` });
-    }
-
-    // 3. Asset Preparation fields validation before transition
-    if (currentStatus === 'Asset Preparation' && status === 'Dispatch Pending') {
-      const asset = ticket.assetDetails;
-      if (!asset || !asset.hostname || !asset.serialNumber || !asset.assetTag || !asset.assignedEngineer) {
-        return res.status(400).json({ error: 'Validation Error: Hostname, Serial Number, Asset Tag, and Assigned Engineer are required fields before completing Asset Preparation.' });
-      }
-    }
-
-    // 4. Dispatch pending transition/approval validation
-    if (currentStatus === 'Dispatch Pending' && status !== 'Dispatch Pending') {
+    // Strict Stage transition validations matching the updated HR workflow
+    
+    // 1. Transitioning from HR Verification to IT & Asset Preparation
+    if (currentStatus === 'HR Verification' && status === 'IT & Asset Preparation') {
       const hr = ticket.hrDetails;
       const isBgvCleared = hr?.bgvStatus === 'Cleared';
       const isExceptionApproved = hr?.approved && hr?.bgvProof && hr?.bgvExceptionReason;
 
       if (!isBgvCleared && !isExceptionApproved) {
-        return res.status(400).json({ error: 'Dispatch Clearance Failed: Background Verification (BGV) must be Cleared, OR an Exceptional Case must be approved with uploaded proof and reason.' });
+        return res.status(400).json({ error: 'Transition Blocked: BGV verification must be Cleared, OR Exception Approval must be approved with uploaded proof and reason.' });
       }
+    }
+
+    // 2. Transitioning from IT & Asset Preparation to Dispatch
+    if (currentStatus === 'IT & Asset Preparation' && status === 'Dispatch') {
+      const it = ticket.itDetails;
+      const asset = ticket.assetDetails;
+      const isItComplete = it && it.adCreated && it.o365LicenseAssigned && it.mfaEnabled;
+      const isAssetComplete = asset && asset.hostname && asset.serialNumber && asset.assetTag && asset.assignedEngineer;
+      const isCredUploaded = !!ticket.credentialSheet;
+      const isGetpassUploaded = !!(asset?.getpassUploaded);
+      const isHandoverSelected = !!(asset?.handoverType);
+
+      if (!isItComplete || !isAssetComplete || !isCredUploaded) {
+        return res.status(400).json({ error: 'Transition Blocked: IT Account Creation (AD, MFA, License), Asset details (Hostname, Serial, Tag, Engineer), and the Credential Handover Package must be fully completed.' });
+      }
+
+      if (!isHandoverSelected) {
+        return res.status(400).json({ error: 'Transition Blocked: Hardware Handover Type (Office / Courier) must be selected before dispatch.' });
+      }
+
+      if (!isGetpassUploaded) {
+        return res.status(400).json({ error: 'Transition Blocked: GetPass Credential Package must be uploaded by the Asset team before dispatch.' });
+      }
+    }
+
+    // 3. Transitioning from Dispatch to Joined
+    if (currentStatus === 'Dispatch' && status === 'Joined') {
+      const dispatch = ticket.dispatchDetails;
+      const qa = ticket.qaDetails;
+      const hr = ticket.hrDetails;
+      const handoverType = ticket.assetDetails?.handoverType;
+
+      const isQaComplete = qa && qa.serialNumberVerified && qa.osConfigured && qa.softwareInstalled;
+      if (!isQaComplete) {
+        return res.status(400).json({ error: 'Transition Blocked: QA Verification checklist must be fully completed.' });
+      }
+
+      // Courier vs Office handover logic
+      if (handoverType === 'COURIER') {
+        const hasCourierInfo = dispatch && dispatch.courierVendor && dispatch.trackingId && dispatch.dispatchDate;
+        const isDelivered = dispatch && dispatch.deliveryStatus === 'Delivered';
+        if (!hasCourierInfo || !isDelivered) {
+          return res.status(400).json({ error: 'Transition Blocked: Courier Handover requires Courier Vendor, Tracking Number, Dispatch Date, and Delivery Status marked as "Delivered".' });
+        }
+      }
+
+      // Enforce DOJ lock
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const doj = new Date(ticket.doj);
+      doj.setHours(0, 0, 0, 0);
+      if (doj > today) {
+        return res.status(400).json({ error: `Transition Blocked: Task remains locked. Marking as Joined is only enabled on or after DOJ: ${doj.toLocaleDateString()}.` });
+      }
+
+      // Induction Schedule & Employee ID fields must be completed
+      const isInductionSet = hr && hr.inductionSchedule && hr.meetingLink && hr.hrCoordinator;
+      const isEmployeeIdSet = ticket.kekaEmployeeId && ticket.kekaEmployeeId.trim() !== '';
+
+      if (!isInductionSet || !isEmployeeIdSet) {
+        return res.status(400).json({ error: 'Transition Blocked: Induction Schedule and Keka Employee ID are mandatory on DOJ before transitioning to Joined.' });
+      }
+    }
+
+    // Protect direct skips or invalid backward moves
+    if (status === 'Joined' && currentStatus !== 'Dispatch') {
+      return res.status(400).json({ error: `Transition Blocked: Cannot transition to Joined directly from "${currentStatus}".` });
     }
 
     const updatedTicket = await prisma.onboardingTicket.update({

@@ -67,6 +67,7 @@ model OnboardingTicket {
   qaDetails        QADetails?
   hardwareRequest  HardwareRequest?
   activityLogs     ActivityLog[]
+  credentialSheet  CredentialSheet?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -109,6 +110,9 @@ model ITDetails {
   adCreated           Boolean  @default(false)
   o365LicenseAssigned Boolean  @default(false)
   mfaEnabled          Boolean  @default(false)
+  vpnCreated          Boolean  @default(false)
+  pitCreated          Boolean  @default(false)
+  assignedO365License String?
   snipeItUserCreated  Boolean  @default(false)
   tempPassword        String?
 }
@@ -126,6 +130,19 @@ model AssetDetails {
   antivirusStatus  String?
   assignedEngineer String?
   deviceCondition  String?
+  // Asset validation from Snipe-IT
+  assetValidated   Boolean  @default(false)
+  assetSnipeId     Int?
+  assetStatusName  String?
+  // Handover & GetPass
+  handoverType     String?   // "OFFICE" | "COURIER"
+  getpassUploaded  Boolean   @default(false)
+  getpassFileName  String?
+  getpassFileContent String? // Base64 encoded
+  getpassFileType  String?
+  getpassUploadedBy String?
+  getpassUploadedAt DateTime?
+  getpassPasswordHint String?
 }
 
 model DispatchDetails {
@@ -133,8 +150,13 @@ model DispatchDetails {
   ticketId         Int      @unique
   ticket           OnboardingTicket @relation(fields: [ticketId], references: [id])
   courierScheduled Boolean  @default(false)
+  courierVendor    String?  // "SHREE_MARUTI" | "DTDC" | "OTHER"
   trackingId       String?
-  delivered        Boolean  @default(false)
+  dispatchDate     DateTime?
+  deliveryStatus   String?  // "Dispatched" | "In Transit" | "Delivered" | null
+  deliveredAt      DateTime?
+  deliveredBy      String?
+  deliveryNote     String?
   podUploaded      Boolean  @default(false)
 }
 
@@ -174,4 +196,41 @@ model HardwareRequest {
   hardwareStatus  String           @default("PENDING") // PENDING, SUBMITTED
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+}
+
+model LicenseInventory {
+  id               Int              @id @default(autoincrement())
+  licenseKey       String           @unique // e.g. "EE-Basic-001"
+  licenseType      String           // EE-Basic, EE-Standard, SBQ-Basic, SBQ-Standard
+  snipeItLicenseId Int
+  status           String           @default("Available") // Available, Assigned
+  assignedToEmail  String?
+  assignedToTicket String?
+  history          LicenseHistory[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model LicenseHistory {
+  id               Int              @id @default(autoincrement())
+  licenseId        Int
+  license          LicenseInventory @relation(fields: [licenseId], references: [id])
+  action           String           // e.g. "Assigned", "Released"
+  assignedToEmail  String?
+  details          String?
+  timestamp        DateTime         @default(now())
+}
+
+model CredentialSheet {
+  id              Int              @id @default(autoincrement())
+  ticketId        Int              @unique
+  ticket          OnboardingTicket @relation(fields: [ticketId], references: [id])
+  fileName        String
+  fileContent     String           // Base64 encoded file data
+  fileType        String
+  uploadedBy      String           // User name or email of uploader
+  uploadedAt      DateTime         @default(now())
+  passwordHint    String?
+  downloadToken   String?          @unique
+  tokenExpiresAt  DateTime?
 }
